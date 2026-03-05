@@ -394,15 +394,19 @@ app.post("/api/audio-chunk", async (c) => {
       .run();
   }
 
-  // Every 3rd chunk: generate an AI question based on accumulated transcript
+  // Every 2nd chunk: generate an AI question based on accumulated transcript
   let aiQuestion: string | null = null;
-  if (chunkIndex % 3 === 2 && c.env.GOOGLE_API_KEY) {
+  if (chunkIndex % 2 === 1 && c.env.GOOGLE_API_KEY) {
     const accumulated = existing
       ? ((existing.raw_text ?? "") + " " + text).trim()
       : text;
-    try {
-      aiQuestion = await generateMeetingQuestion(accumulated, c.env.GOOGLE_API_KEY);
-    } catch { /* non-fatal */ }
+    if (accumulated.length >= 50) {
+      try {
+        aiQuestion = await generateMeetingQuestion(accumulated, c.env.GOOGLE_API_KEY);
+      } catch (e) {
+        console.warn("[Question gen] failed:", e);
+      }
+    }
   }
 
   return c.json({ status: "ok", chunk_index: chunkIndex, chunk_text_length: text.length, question: aiQuestion });

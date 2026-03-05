@@ -90,7 +90,7 @@ export async function generateMeetingQuestion(
   transcript: string,
   googleApiKey: string,
 ): Promise<string | null> {
-  if (transcript.length < 150) return null;
+  if (transcript.length < 50) return null;
 
   const prompt = `Te egy tapasztalt projekt menedzser vagy, aki éppen meghallgat egy meetinget. Egyetlen kérdést teszel fel, ami segít mélyebben megérteni:
 - mi a valódi probléma amit meg akarnak oldani
