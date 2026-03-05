@@ -1,0 +1,20 @@
+name = "bildr-meets"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bildr-meets-db"
+database_id = "PLACEHOLDER_FILL_AFTER_CREATE"
+# wrangler d1 create bildr-meets-db  →  kapott ID-t ide kell beírni
+
+# API kulcsok: wrangler secret put GROQ_API_KEY  (NE tedd ide plain text-ben!)
+# Szükséges secrets:
+#   GROQ_API_KEY
+#   GOOGLE_API_KEY
+#   TWENTY_API_URL
+#   TWENTY_API_KEY
+
+[vars]
+ENVIRONMENT = "production"
