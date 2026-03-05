@@ -37,3 +37,6 @@ pg_data/
 # Cloudflare Tunnel credentials (NE commitold!)
 cloudflared/*.json
 cloudflared/cert.pem
+
+# Feltöltött hangfájlok (lokális fejlesztés)
+backend/local_storage/
