@@ -13,7 +13,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { transcribeAudio } from "./stt";
-import { generateSummary, generateFollowUpEmail, type MeetingSummary } from "./llm";
+import { generateSummary, generateFollowUpEmail, generateMeetingQuestion, type MeetingSummary } from "./llm";
 import {
   searchCompanies,
   createCompany,
@@ -273,6 +273,30 @@ app.patch("/api/meetings/:id/company", async (c) => {
   });
 });
 
+// ── Meetings: create (for streaming / extension use) ─────────────────
+
+app.post("/api/meetings", async (c) => {
+  const body = await c.req.json<{ title?: string; source?: string }>().catch(() => ({}));
+  const title = body.title ?? `Meeting ${new Date().toISOString().slice(0, 16).replace("T", " ")}`;
+  const source = body.source ?? "extension";
+  const meetingId = uuid();
+  const transcriptId = uuid();
+
+  await c.env.DB.prepare(
+    "INSERT INTO meetings (id, title, source, status, created_at, updated_at) VALUES (?, ?, ?, 'recording', ?, ?)",
+  )
+    .bind(meetingId, title, source, now(), now())
+    .run();
+
+  await c.env.DB.prepare(
+    "INSERT INTO transcripts (id, meeting_id, created_at, updated_at) VALUES (?, ?, ?, ?)",
+  )
+    .bind(transcriptId, meetingId, now(), now())
+    .run();
+
+  return c.json({ id: meetingId, title, source, status: "recording" });
+});
+
 // ── Audio: full upload pipeline ───────────────────────────────────────
 
 app.post("/api/process-audio", async (c) => {
@@ -370,7 +394,18 @@ app.post("/api/audio-chunk", async (c) => {
       .run();
   }
 
-  return c.json({ status: "ok", chunk_index: chunkIndex, chunk_text_length: text.length });
+  // Every 3rd chunk: generate an AI question based on accumulated transcript
+  let aiQuestion: string | null = null;
+  if (chunkIndex % 3 === 2 && c.env.GOOGLE_API_KEY) {
+    const accumulated = existing
+      ? ((existing.raw_text ?? "") + " " + text).trim()
+      : text;
+    try {
+      aiQuestion = await generateMeetingQuestion(accumulated, c.env.GOOGLE_API_KEY);
+    } catch { /* non-fatal */ }
+  }
+
+  return c.json({ status: "ok", chunk_index: chunkIndex, chunk_text_length: text.length, question: aiQuestion });
 });
 
 // ── Audio: finalize (streaming mode) ─────────────────────────────────

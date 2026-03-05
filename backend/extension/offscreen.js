@@ -102,8 +102,15 @@ function startSegment() {
         method: "POST",
         body: form,
       });
-      const text = await res.text();
-      console.log(`[OFF] Chunk #${idx} response (${res.status}):`, text);
+      if (res.ok) {
+        const data = await res.json();
+        console.log(`[OFF] Chunk #${idx} response:`, data);
+        if (data.question) {
+          sendBG("AI_QUESTION", { question: data.question });
+        }
+      } else {
+        console.error(`[OFF] Chunk #${idx} failed: ${res.status}`);
+      }
     } catch (err) {
       console.error(`[OFF] Chunk #${idx} fetch error:`, err);
     }

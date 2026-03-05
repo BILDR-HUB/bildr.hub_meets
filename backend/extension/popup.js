@@ -55,10 +55,10 @@ btnStart.addEventListener("click", async () => {
 
     // 2. Create meeting in backend
     const title = tab.title?.replace(" - Google Meet", "").trim() || "Meeting";
-    const res = await fetch(`${API_URL}/api/bot/join`, {
+    const res = await fetch(`${API_URL}/api/meetings`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ meet_url: tab.url, title }),
+      body: JSON.stringify({ title, source: "extension" }),
     });
     if (!res.ok) throw new Error(`Backend: HTTP ${res.status}`);
     const meeting = await res.json();

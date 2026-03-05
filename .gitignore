@@ -40,3 +40,4 @@ cloudflared/cert.pem
 
 # Feltöltött hangfájlok (lokális fejlesztés)
 backend/local_storage/
+worker/public/

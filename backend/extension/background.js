@@ -109,10 +109,21 @@ chrome.runtime.onConnect.addListener((port) => {
       console.error("[BG] upload error:", msg.payload);
       closeOffscreen();
     }
+    if (msg.type === "AI_QUESTION" && msg.payload?.question) {
+      forwardQuestionToMeetTab(msg.payload.question);
+    }
   });
 
   port.onDisconnect.addListener(() => { offscreenPort = null; });
 });
+
+function forwardQuestionToMeetTab(question) {
+  chrome.tabs.query({ url: "https://meet.google.com/*" }, (tabs) => {
+    tabs.forEach((tab) => {
+      chrome.tabs.sendMessage(tab.id, { type: "AI_QUESTION", question }).catch(() => {});
+    });
+  });
+}
 
 function waitForPort(ms) {
   if (offscreenPort) return Promise.resolve(true);

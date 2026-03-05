@@ -86,6 +86,47 @@ const EMAIL_PROMPT = `Írj egy rövid, professzionális follow-up emailt a meeti
 Pontosan ezt a JSON struktúrát add vissza:
 {"subject": "Email tárgya", "body": "Email törzse"}`;
 
+export async function generateMeetingQuestion(
+  transcript: string,
+  googleApiKey: string,
+): Promise<string | null> {
+  if (transcript.length < 150) return null;
+
+  const prompt = `Te egy tapasztalt projekt menedzser vagy, aki éppen meghallgat egy meetinget. Egyetlen kérdést teszel fel, ami segít mélyebben megérteni:
+- mi a valódi probléma amit meg akarnak oldani
+- mit akar konkrétan a megrendelő/ügyfél
+- mi a következő lépés vagy döntés ami szükséges
+
+A kérdés legyen:
+- Emberi, közvetlen hangvételű
+- Fókuszált az üzleti folyamatra, nem a technológiára
+- Max 2 mondat
+- Magyar nyelven
+
+Csak a kérdést add vissza, semmi mást.
+
+Meeting átirat (utolsó részlet):
+${transcript.slice(-2000)}`;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${googleApiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 120 },
+      }),
+    },
+  );
+
+  if (!response.ok) return null;
+  const data = (await response.json()) as {
+    candidates: Array<{ content: { parts: Array<{ text: string }> } }>;
+  };
+  return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
+}
+
 export async function generateFollowUpEmail(
   meetingTitle: string,
   summary: MeetingSummary,

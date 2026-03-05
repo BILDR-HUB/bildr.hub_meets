@@ -9,7 +9,7 @@
  * This script handles YOUR voice via the mic.
  */
 
-const API_URL = "http://localhost:8000";
+const API_URL = "https://meets.bildr.hu";
 
 let isRecording = false;
 let startTime = null;
@@ -59,6 +59,9 @@ chrome.runtime.onMessage.addListener((message) => {
   if (message.type === "RECORDING_STOPPED") {
     stopMicRecording();
     setIdleUI();
+  }
+  if (message.type === "AI_QUESTION" && message.question) {
+    showAiQuestion(message.question);
   }
 });
 
@@ -137,6 +140,7 @@ function startMicSegment(meetingId) {
       if (res.ok) {
         const result = await res.json();
         console.log(`[bildr] Mic chunk #${idx} transcribed: ${result.chunk_text_length} chars`);
+        if (result.question) showAiQuestion(result.question);
       } else {
         console.error(`[bildr] Mic chunk #${idx} failed:`, await res.text());
       }
@@ -271,6 +275,36 @@ function startEndDetection() {
 
 function stopEndDetection() {
   if (endChecker) { clearInterval(endChecker); endChecker = null; }
+}
+
+// ── AI Question popup ────────────────────────────────────────────────
+
+function showAiQuestion(question) {
+  const existing = document.getElementById("bildr-ai-question");
+  if (existing) existing.remove();
+
+  const popup = document.createElement("div");
+  popup.id = "bildr-ai-question";
+  popup.innerHTML = `
+    <div class="bildr-q-header">
+      <span class="bildr-q-icon">💡</span>
+      <span class="bildr-q-title">bildr.hub</span>
+      <button class="bildr-q-close" aria-label="Bezár">✕</button>
+    </div>
+    <div class="bildr-q-body"></div>
+  `;
+  popup.querySelector(".bildr-q-body").textContent = question;
+  document.body.appendChild(popup);
+
+  const autoClose = setTimeout(() => popup.remove(), 25000);
+
+  popup.querySelector(".bildr-q-close").addEventListener("click", () => {
+    clearTimeout(autoClose);
+    popup.remove();
+  });
+
+  // Slide in
+  requestAnimationFrame(() => popup.classList.add("bildr-q-visible"));
 }
 
 // ── Init ────────────────────────────────────────────────────────────
