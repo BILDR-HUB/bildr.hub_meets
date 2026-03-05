@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = [
         "http://localhost:8081",
         "http://localhost:19006",
+        "https://meets.bildr.hu",
         "https://meet.google.com",
         "chrome-extension://*",
     ]
