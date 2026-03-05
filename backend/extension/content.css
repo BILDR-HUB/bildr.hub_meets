@@ -1,0 +1,61 @@
+#bildr-rec-widget {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  z-index: 999999;
+  font-family: 'Google Sans', Roboto, Arial, sans-serif;
+}
+
+#bildr-rec-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: all 0.2s;
+}
+
+#bildr-rec-btn.idle {
+  background: #1a73e8;
+  color: white;
+}
+#bildr-rec-btn.idle:hover {
+  background: #1557b0;
+}
+
+#bildr-rec-btn.recording {
+  background: #d93025;
+  color: white;
+  animation: bildr-pulse 2s infinite;
+}
+
+#bildr-rec-btn .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: white;
+  flex-shrink: 0;
+}
+
+#bildr-rec-btn.recording .dot {
+  animation: bildr-blink 1s infinite;
+}
+
+#bildr-rec-timer {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes bildr-pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(217,48,37,0.3); }
+  50% { box-shadow: 0 2px 16px rgba(217,48,37,0.6); }
+}
+
+@keyframes bildr-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}

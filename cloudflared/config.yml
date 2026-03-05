@@ -1,0 +1,23 @@
+# Cloudflare Tunnel config – meets.bildr.hu
+#
+# BEÁLLÍTÁS:
+# 1. `cloudflared tunnel login` (a VPS-en)
+# 2. `cloudflared tunnel create meeting-app`
+# 3. A kapott TUNNEL_ID-t és a .json credentials fájlt ide másold
+# 4. `cloudflared tunnel route dns meeting-app meets.bildr.hu`
+
+tunnel: TUNNEL_ID_IDE
+credentials-file: /etc/cloudflared/TUNNEL_ID_IDE.json
+
+ingress:
+  # Backend API – minden /api/* kérés a FastAPI-hoz
+  - hostname: meets.bildr.hu
+    path: /api
+    service: http://backend:8000
+
+  - hostname: meets.bildr.hu
+    path: /api/.*
+    service: http://backend:8000
+
+  # Minden más → 404 (a frontend Cloudflare Pages-en fut, nem itt)
+  - service: http_status:404

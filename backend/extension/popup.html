@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 260px;
+      padding: 16px;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+    }
+    h3 { font-size: 15px; color: #fff; margin-bottom: 10px; }
+    #status { font-size: 13px; color: #aaa; margin-bottom: 12px; }
+    #status.err { color: #ff6b6b; }
+    #status.rec { color: #4ecdc4; }
+    #timer { font-size: 22px; font-weight: bold; color: #e53935; text-align: center; margin: 8px 0; display: none; }
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #btn-start { background: #1a73e8; color: #fff; }
+    #btn-start:hover { background: #1557b0; }
+    #btn-stop { background: #e53935; color: #fff; display: none; }
+    #btn-stop:hover { background: #c62828; }
+    button:disabled { background: #555; cursor: wait; }
+    #not-meet { font-size: 13px; color: #888; display: none; }
+  </style>
+</head>
+<body>
+  <h3>bildr.hub Meeting Notes</h3>
+  <p id="not-meet">Nyiss meg egy Google Meet oldalt.</p>
+  <p id="status">Kész a felvételre.</p>
+  <div id="timer">00:00</div>
+  <button id="btn-start">Felvétel indítása</button>
+  <button id="btn-stop">Leállítás</button>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Meeting Bot Offscreen Recorder</title>
+</head>
+<body>
+  <!--
+    This document is never visible to the user.
+    It exists solely to access getUserMedia + MediaRecorder APIs,
+    which are unavailable in the MV3 service worker context.
+  -->
+  <script src="offscreen.js"></script>
+</body>
+</html>

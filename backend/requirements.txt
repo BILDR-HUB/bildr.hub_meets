@@ -1,0 +1,24 @@
+# ── Core Framework ───────────────────────────────────────────────────
+fastapi>=0.115
+uvicorn[standard]>=0.34
+python-multipart>=0.0.18
+pydantic>=2.10
+pydantic-settings>=2.7
+
+# ── Database & Supabase ──────────────────────────────────────────────
+supabase>=2.11
+httpx>=0.28
+
+# ── Speech-to-Text ───────────────────────────────────────────────────
+groq>=0.13
+deepgram-sdk>=6.0
+
+# ── LLM Processing ──────────────────────────────────────────────────
+google-genai>=1.1
+openai>=1.58
+
+# ── Bot (Playwright) ────────────────────────────────────────────────
+playwright>=1.49
+
+# ── Utilities ────────────────────────────────────────────────────────
+python-dotenv>=1.0
