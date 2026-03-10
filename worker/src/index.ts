@@ -472,6 +472,38 @@ app.post("/api/audio-finalize", async (c) => {
   });
 });
 
+// ── Reprocess: re-run AI summary pipeline on existing transcript ──────
+
+app.post("/api/meetings/:id/reprocess", async (c) => {
+  const meetingId = c.req.param("id");
+  const meeting = await getMeeting(c.env.DB, meetingId);
+  if (!meeting) return c.json({ error: "Meeting not found" }, 404);
+
+  const transcript = await c.env.DB.prepare(
+    "SELECT id, raw_text FROM transcripts WHERE meeting_id = ? ORDER BY created_at DESC LIMIT 1",
+  )
+    .bind(meetingId)
+    .first<{ id: string; raw_text: string | null }>();
+
+  if (!transcript?.raw_text) {
+    return c.json({ error: "No transcript text available" }, 422);
+  }
+
+  await setMeetingStatus(c.env.DB, meetingId, "processing");
+
+  c.executionCtx.waitUntil(
+    runSummaryPipeline(
+      c.env,
+      meetingId,
+      transcript.id,
+      transcript.raw_text,
+      meeting.title,
+    ),
+  );
+
+  return c.json({ status: "processing", meeting_id: meetingId });
+});
+
 // ── CRM: companies ────────────────────────────────────────────────────
 
 app.get("/api/crm/companies", async (c) => {
