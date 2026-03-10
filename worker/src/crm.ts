@@ -38,6 +38,28 @@ async function gql<T>(
   return data.data as T;
 }
 
+// ── List all companies (no filter) ────────────────────────────────────
+
+export async function listAllCompanies(
+  limit: number,
+  apiUrl: string,
+  apiKey: string,
+): Promise<CrmCompany[]> {
+  const q = `query ListCompanies($first: Int) {
+    companies(first: $first, orderBy: { name: AscNullsLast }) {
+      edges { node { id name domainName { primaryLinkUrl } } }
+    }
+  }`;
+  const data = await gql<{
+    companies: { edges: Array<{ node: { id: string; name: string; domainName?: { primaryLinkUrl?: string } } }> };
+  }>(apiUrl, apiKey, q, { first: limit });
+  return data.companies.edges.map((e) => ({
+    id: e.node.id,
+    name: e.node.name ?? "",
+    domain: e.node.domainName?.primaryLinkUrl ?? "",
+  }));
+}
+
 // ── Company search ────────────────────────────────────────────────────
 
 export async function searchCompanies(

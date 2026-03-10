@@ -15,6 +15,7 @@ import { cors } from "hono/cors";
 import { transcribeAudio } from "./stt";
 import { generateSummary, generateFollowUpEmail, generateMeetingQuestion, type MeetingSummary } from "./llm";
 import {
+  listAllCompanies,
   searchCompanies,
   createCompany,
   createPerson,
@@ -510,11 +511,9 @@ app.get("/api/crm/companies", async (c) => {
   const search = c.req.query("search") ?? "";
   const limit = Number(c.req.query("limit") ?? 10);
 
-  if (!search) return c.json({ companies: [] });
-
-  const companies = await searchCompanies(
-    search, limit, c.env.TWENTY_API_URL, c.env.TWENTY_API_KEY,
-  );
+  const companies = search
+    ? await searchCompanies(search, limit, c.env.TWENTY_API_URL, c.env.TWENTY_API_KEY)
+    : await listAllCompanies(limit, c.env.TWENTY_API_URL, c.env.TWENTY_API_KEY);
   return c.json({ companies });
 });
 
