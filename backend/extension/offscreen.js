@@ -13,6 +13,7 @@ let currentConfig = {};
 let chunkIndex = 0;
 let rotateInterval = null;
 let mimeType = null;
+let audioCtx = null;
 
 const CHUNK_INTERVAL_MS = 30_000;
 
@@ -52,6 +53,11 @@ async function startCapture(payload) {
       video: false,
     });
     console.log("[OFF] Tab audio OK");
+
+    // Play captured audio back to speakers so the user can still hear the meeting
+    audioCtx = new AudioContext();
+    const source = audioCtx.createMediaStreamSource(tabStream);
+    source.connect(audioCtx.destination);
 
     mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
       ? "audio/webm;codecs=opus" : "audio/webm";
@@ -155,6 +161,10 @@ function sendBG(type, payload) {
 }
 
 function cleanup() {
+  if (audioCtx) {
+    audioCtx.close();
+    audioCtx = null;
+  }
   if (tabStream) {
     tabStream.getTracks().forEach(t => t.stop());
     tabStream = null;

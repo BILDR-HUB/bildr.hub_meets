@@ -9,7 +9,7 @@
  * This script handles YOUR voice via the mic.
  */
 
-const API_URL = "https://meets.bildr.hu";
+const API_URL = "https://bildr-meets.bator-turny.workers.dev";
 
 let isRecording = false;
 let startTime = null;

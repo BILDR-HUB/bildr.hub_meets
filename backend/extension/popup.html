@@ -2,44 +2,207 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      width: 260px;
-      padding: 16px;
-      font-family: 'Segoe UI', Roboto, sans-serif;
-      background: #1a1a2e;
-      color: #e0e0e0;
+      width: 280px;
+      background: #1c1917;
+      color: #e7e5e4;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow: hidden;
     }
-    h3 { font-size: 15px; color: #fff; margin-bottom: 10px; }
-    #status { font-size: 13px; color: #aaa; margin-bottom: 12px; }
-    #status.err { color: #ff6b6b; }
-    #status.rec { color: #4ecdc4; }
-    #timer { font-size: 22px; font-weight: bold; color: #e53935; text-align: center; margin: 8px 0; display: none; }
+
+    /* Header */
+    .header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: #231f1c;
+    }
+
+    .logo {
+      font-family: 'Bungee', sans-serif;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+      color: #e7e5e4;
+      line-height: 1;
+    }
+    .logo span { color: #fbbf24; }
+
+    .logo-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #78716c;
+      margin-top: 3px;
+    }
+
+    /* Body */
+    .body {
+      padding: 14px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Status */
+    #status {
+      font-size: 12px;
+      font-weight: 500;
+      color: #a8a29e;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 16px;
+    }
+    #status.err { color: #f87171; }
+    #status.rec { color: #fbbf24; }
+    #status.ok  { color: #34d399; }
+
+    /* Not-meet warning */
+    #not-meet {
+      display: none;
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #fca5a5;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.04em;
+      line-height: 1.5;
+    }
+
+    /* Timer */
+    #timer {
+      display: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 28px;
+      font-weight: 500;
+      color: #fbbf24;
+      text-align: center;
+      letter-spacing: 0.08em;
+      padding: 4px 0;
+    }
+
+    /* Recording indicator */
+    .rec-indicator {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(217,119,6,0.08);
+      border: 1px solid rgba(217,119,6,0.2);
+      border-radius: 10px;
+    }
+    .rec-indicator.active { display: flex; }
+
+    .rec-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ef4444;
+      animation: pulse-dot 1.2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .rec-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #d97706;
+    }
+
+    /* Buttons */
     button {
       width: 100%;
-      padding: 10px;
+      padding: 11px;
       border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
+      border-radius: 10px;
+      font-family: 'Bungee', sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.06em;
       cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
     }
-    #btn-start { background: #1a73e8; color: #fff; }
-    #btn-start:hover { background: #1557b0; }
-    #btn-stop { background: #e53935; color: #fff; display: none; }
-    #btn-stop:hover { background: #c62828; }
-    button:disabled { background: #555; cursor: wait; }
-    #not-meet { font-size: 13px; color: #888; display: none; }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.45; cursor: wait; }
+
+    #btn-start {
+      background: linear-gradient(135deg, #d97706, #fbbf24);
+      color: #1c1917;
+    }
+    #btn-start:not(:disabled):hover { opacity: 0.88; }
+
+    #btn-stop {
+      display: none;
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5;
+    }
+    #btn-stop:not(:disabled):hover { background: rgba(239,68,68,0.2); }
+
+    /* Footer */
+    .footer {
+      padding: 8px 16px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-version {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      color: #44403c;
+    }
+    .footer-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #44403c;
+    }
+    .footer-dot.online { background: #34d399; }
   </style>
 </head>
 <body>
-  <h3>bildr.hub Meeting Notes</h3>
-  <p id="not-meet">Nyiss meg egy Google Meet oldalt.</p>
-  <p id="status">Kész a felvételre.</p>
-  <div id="timer">00:00</div>
-  <button id="btn-start">Felvétel indítása</button>
-  <button id="btn-stop">Leállítás</button>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">BILDR<span>.HUB</span></div>
+    <div class="logo-sub">Meeting Notes</div>
+  </div>
+
+  <!-- Body -->
+  <div class="body">
+    <p id="not-meet">Nyiss meg egy<br>Google Meet oldalt.</p>
+    <p id="status">Kész a felvételre.</p>
+
+    <div class="rec-indicator" id="rec-indicator">
+      <div class="rec-dot"></div>
+      <span class="rec-label">Felvétel folyamatban</span>
+      <div id="timer">00:00</div>
+    </div>
+
+    <button id="btn-start">Felvétel indítása</button>
+    <button id="btn-stop">Leállítás</button>
+    <a id="btn-office" href="https://office.bildr.hu/meetings" target="_blank" style="display:none; text-align:center; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.12em; color:#fbbf24; text-decoration:none; padding:6px; border-radius:8px; border:1px solid rgba(251,191,36,0.2); background:rgba(251,191,36,0.05); transition:background 0.2s;">MEGNYITÁS AZ OFFICE-BAN →</a>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="footer-version">v2.5.0</span>
+    <div class="footer-dot" id="status-dot"></div>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

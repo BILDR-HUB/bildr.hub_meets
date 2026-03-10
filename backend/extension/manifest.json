@@ -13,8 +13,7 @@
   ],
 
   "host_permissions": [
-    "http://localhost:8000/*",
-    "http://localhost:8787/*",
+    "https://bildr-meets.bator-turny.workers.dev/*",
     "https://meets.bildr.hu/*"
   ],
 

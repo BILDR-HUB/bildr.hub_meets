@@ -5,13 +5,15 @@
  * Stop also calls backend directly to update meeting status.
  */
 
-const API_URL = "https://meets.bildr.hu";
+const API_URL = "https://bildr-meets.bator-turny.workers.dev";
 
 const btnStart = document.getElementById("btn-start");
 const btnStop = document.getElementById("btn-stop");
 const statusEl = document.getElementById("status");
 const timerEl = document.getElementById("timer");
 const notMeetEl = document.getElementById("not-meet");
+const recIndicator = document.getElementById("rec-indicator");
+const statusDot = document.getElementById("status-dot");
 
 let timerInterval = null;
 
@@ -24,6 +26,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     notMeetEl.style.display = "block";
     statusEl.style.display = "none";
     btnStart.style.display = "none";
+    return;
+  }
+
+  // Backend elérhetőség ellenőrzése
+  try {
+    const r = await fetch(`${API_URL}/api/health`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    statusEl.textContent = "Kész a felvételre.";
+    statusEl.className = "";
+    if (statusDot) statusDot.classList.add("online");
+  } catch (e) {
+    statusEl.textContent = `Backend nem elérhető: ${e.message}`;
+    statusEl.className = "err";
+    btnStart.disabled = true;
+    console.error("[popup] Backend check failed:", e);
     return;
   }
 
@@ -42,6 +59,7 @@ btnStart.addEventListener("click", async () => {
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    console.log("[popup] Tab:", tab?.url);
 
     // 1. Tab capture (popup has activeTab)
     statusEl.textContent = "Tab capture...";
@@ -51,17 +69,25 @@ btnStart.addEventListener("click", async () => {
         else resolve(id);
       });
     });
+    console.log("[popup] streamId:", streamId);
     statusEl.textContent = "Stream OK, meeting létrehozása...";
 
     // 2. Create meeting in backend
     const title = tab.title?.replace(" - Google Meet", "").trim() || "Meeting";
-    const res = await fetch(`${API_URL}/api/meetings`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, source: "extension" }),
-    });
+    console.log("[popup] Fetching:", API_URL + "/api/meetings");
+    let res;
+    try {
+      res = await fetch(`${API_URL}/api/meetings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, source: "extension" }),
+      });
+    } catch (fetchErr) {
+      throw new Error(`Hálózati hiba: ${fetchErr.message} (${API_URL})`);
+    }
     if (!res.ok) throw new Error(`Backend: HTTP ${res.status}`);
     const meeting = await res.json();
+    console.log("[popup] Meeting created:", meeting.id);
     statusEl.textContent = "Meeting OK, capture indítása...";
 
     // 3. Tell background to start offscreen capture
@@ -71,6 +97,7 @@ btnStart.addEventListener("click", async () => {
         payload: { streamId, meetingId: meeting.id, apiUrl: API_URL },
       }, resolve);
     });
+    console.log("[popup] BG response:", bgRes);
 
     if (bgRes?.status === "error") throw new Error(bgRes.error);
 
@@ -143,7 +170,9 @@ btnStop.addEventListener("click", async () => {
           const data = await res.json();
           console.log("[popup] Finalize OK:", data);
           statusEl.textContent = "Kész!";
-          statusEl.className = "";
+          statusEl.className = "ok";
+          const officeBtn = document.getElementById("btn-office");
+          if (officeBtn) officeBtn.style.display = "block";
         } else {
           console.error("[popup] Finalize failed:", await res.text());
           statusEl.textContent = "Feldolgozási hiba";
@@ -169,8 +198,9 @@ function showStopUI(startTime) {
   btnStart.style.display = "none";
   btnStop.style.display = "block";
   btnStop.disabled = false;
-  statusEl.textContent = "Felvétel folyamatban...";
+  statusEl.textContent = "";
   statusEl.className = "rec";
+  if (recIndicator) recIndicator.classList.add("active");
   timerEl.style.display = "block";
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => tick(startTime), 1000);
@@ -182,6 +212,9 @@ function showStartUI() {
   btnStart.disabled = false;
   btnStop.style.display = "none";
   timerEl.style.display = "none";
+  if (recIndicator) recIndicator.classList.remove("active");
+  statusEl.textContent = "Kész a felvételre.";
+  statusEl.className = "";
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 }
 
