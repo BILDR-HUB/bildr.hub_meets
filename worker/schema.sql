@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS transcripts (
   action_items      TEXT DEFAULT '[]',  -- JSON array
   diarized_text     TEXT,
   followup_email    TEXT,               -- JSON {subject, body}
+  deep_analysis     TEXT,               -- JSON deep analysis object
   created_at        TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );

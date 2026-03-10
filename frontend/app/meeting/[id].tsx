@@ -114,6 +114,12 @@ export default function MeetingDetailScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
     >
+      {/* Back button */}
+      <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="arrow-back-outline" size={16} color={colors.textSecondary} />
+        <Text style={styles.backButtonText}>Meetingek</Text>
+      </Pressable>
+
       {/* Header – editable title */}
       {editingTitle ? (
         <TextInput
@@ -207,26 +213,65 @@ export default function MeetingDetailScreen() {
       {isProcessing && (
         <View style={styles.processingCard}>
           <ActivityIndicator color={colors.processing} />
-          <Text style={styles.processingText}>
-            {meeting.status === "recording"
-              ? "Felvétel folyamatban..."
-              : "Feldolgozás – átírás és összefoglalás..."}
-          </Text>
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text style={styles.processingText}>
+              {meeting.status === "recording"
+                ? "Felvétel folyamatban..."
+                : "Feldolgozás – átírás és összefoglalás..."}
+            </Text>
+            {meeting.status === "recording" && (
+              <Pressable
+                onPress={async () => {
+                  try {
+                    const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
+                    const form = new FormData();
+                    form.append("meeting_id", meeting.id);
+                    const res = await fetch(`${API_URL}/api/audio-finalize`, { method: "POST", body: form });
+                    if (res.ok) {
+                      setMeeting((prev) => prev ? { ...prev, status: "processing" } : prev);
+                    }
+                  } catch {}
+                }}
+              >
+                <Text style={styles.retryText}>Feldolgozás indítása manuálisan →</Text>
+              </Pressable>
+            )}
+          </View>
         </View>
       )}
 
-      {/* Executive Summary */}
-      {transcript?.executive_summary && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="document-text-outline" size={20} color={colors.accent} />
-            <Text style={styles.sectionTitle}>Összefoglaló</Text>
+      {/* Executive Summary – sections or plain text */}
+      {transcript?.executive_summary && (() => {
+        let sections: Array<{ title: string; points: string[] }> | null = null;
+        try {
+          const parsed = JSON.parse(transcript.executive_summary!);
+          if (Array.isArray(parsed) && parsed.length > 0) sections = parsed;
+        } catch { /* plain text */ }
+
+        return (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="document-text-outline" size={20} color={colors.accent} />
+              <Text style={styles.sectionTitle}>Összefoglaló</Text>
+            </View>
+            {sections ? (
+              sections.map((sec, i) => (
+                <View key={i} style={styles.summarySection}>
+                  <Text style={styles.summarySectionTitle}>{sec.title}</Text>
+                  {sec.points.map((point, j) => (
+                    <View key={j} style={styles.summaryPoint}>
+                      <Text style={styles.summaryBullet}>•</Text>
+                      <Text style={styles.summaryPointText}>{point}</Text>
+                    </View>
+                  ))}
+                </View>
+              ))
+            ) : (
+              <Text style={styles.summaryText}>{transcript.executive_summary}</Text>
+            )}
           </View>
-          <Text style={styles.summaryText}>
-            {transcript.executive_summary}
-          </Text>
-        </View>
-      )}
+        );
+      })()}
 
       {/* Action Items */}
       {transcript?.action_items && transcript.action_items.length > 0 && (
@@ -425,6 +470,18 @@ export default function MeetingDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  backButton: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    alignSelf: "flex-start" as const,
+    paddingVertical: 4,
+    marginBottom: spacing.xs,
+  },
+  backButtonText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: 60 },
   center: {
     flex: 1,
@@ -496,7 +553,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.processing + "40",
   },
-  processingText: { color: colors.processing, fontSize: 14, flex: 1 },
+  processingText: { color: colors.processing, fontSize: 14 },
+  retryText: { color: colors.accent, fontSize: 13, textDecorationLine: "underline" },
 
   // Sections
   section: {
@@ -513,6 +571,34 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 15,
     lineHeight: 24,
+  },
+  summarySection: {
+    gap: 6,
+    marginTop: spacing.xs,
+  },
+  summarySectionTitle: {
+    color: colors.accent,
+    fontSize: 13,
+    fontWeight: "700" as const,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  summaryPoint: {
+    flexDirection: "row" as const,
+    gap: 8,
+    paddingLeft: 4,
+  },
+  summaryBullet: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  summaryPointText: {
+    color: colors.text,
+    fontSize: 14,
+    lineHeight: 21,
+    flex: 1,
   },
 
   // Action items

@@ -74,6 +74,7 @@ app.use("*", async (c, next) => {
   const origin = c.req.header("Origin") ?? "";
   const allowed =
     origin === "https://meets.bildr.hu" ||
+    origin === "https://office.bildr.hu" ||
     origin.startsWith("http://localhost") ||
     origin.startsWith("chrome-extension://");
 
@@ -134,6 +135,7 @@ app.get("/api/meetings/:id", async (c) => {
       action_items: string;
       diarized_text: string | null;
       followup_email: string | null;
+      deep_analysis: string | null;
     }>();
 
   const parsedTranscript = transcript
@@ -142,6 +144,9 @@ app.get("/api/meetings/:id", async (c) => {
         action_items: JSON.parse(transcript.action_items ?? "[]"),
         followup_email: transcript.followup_email
           ? JSON.parse(transcript.followup_email)
+          : null,
+        deep_analysis: transcript.deep_analysis
+          ? JSON.parse(transcript.deep_analysis)
           : null,
       }
     : null;
@@ -211,10 +216,25 @@ app.patch("/api/meetings/:id/company", async (c) => {
       }>();
 
     if (transcript?.executive_summary) {
+      // executive_summary may be a JSON sections array (new format) or plain text (old)
+      let execSummaryText = transcript.executive_summary;
+      let sections: import("./llm").SummarySection[] = [];
+      try {
+        const parsed = JSON.parse(transcript.executive_summary);
+        if (Array.isArray(parsed)) {
+          sections = parsed;
+          execSummaryText = parsed
+            .map((s: import("./llm").SummarySection) => `${s.title}:\n${s.points.map((p: string) => `- ${p}`).join("\n")}`)
+            .join("\n\n");
+        }
+      } catch { /* plain text, use as-is */ }
+
       const summary: MeetingSummary = {
-        executive_summary: transcript.executive_summary,
+        sections,
+        executive_summary: execSummaryText,
         action_items: JSON.parse(transcript.action_items ?? "[]"),
         diarized_transcript: null,
+        deep_analysis: null,
       };
       const followup = transcript.followup_email
         ? JSON.parse(transcript.followup_email)
@@ -425,12 +445,13 @@ app.post("/api/audio-finalize", async (c) => {
     .bind(meetingId)
     .first<{ id: string; raw_text: string | null }>();
 
-  if (!transcript?.raw_text) {
-    return c.json({ error: "No transcript found" }, 404);
-  }
-
   const meeting = await getMeeting(c.env.DB, meetingId);
   if (!meeting) return c.json({ error: "Meeting not found" }, 404);
+
+  if (!transcript?.raw_text) {
+    await setMeetingStatus(c.env.DB, meetingId, "failed");
+    return c.json({ error: "No speech detected in recording", status: "failed" }, 422);
+  }
 
   await setMeetingStatus(c.env.DB, meetingId, "processing");
 
@@ -542,12 +563,18 @@ async function runSummaryPipeline(
   try {
     // Step 1: Generate summary
     const summary = await generateSummary(rawText, env.GOOGLE_API_KEY);
+    // Store sections as JSON in executive_summary; plain text fallback derived in llm.ts
+    const summaryToStore = summary.sections.length > 0
+      ? JSON.stringify(summary.sections)
+      : summary.executive_summary;
+    const deepAnalysisJson = summary.deep_analysis ? JSON.stringify(summary.deep_analysis) : null;
     await env.DB.prepare(
-      "UPDATE transcripts SET executive_summary = ?, action_items = ?, updated_at = ? WHERE id = ?",
+      "UPDATE transcripts SET executive_summary = ?, action_items = ?, deep_analysis = ?, updated_at = ? WHERE id = ?",
     )
       .bind(
-        summary.executive_summary,
+        summaryToStore,
         JSON.stringify(summary.action_items),
+        deepAnalysisJson,
         now(),
         transcriptId,
       )
